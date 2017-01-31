@@ -21,17 +21,22 @@ function jscpu() {
 		cpu.registers = {
 			r0: 0,				//Register 0
 			r1:  0,				//Register 1
-			s: 0,				//Status
+			s: 0,					//Status
 			ovfl: 0,			//Overflow
 			udfl: 0,			//Underflow
-			pc: 0				//Program counter
+			pc: 0					//Program counter
 		}
 
 		cpu.instructionSet = {
-			"add": cpu.add,
-			"sub": cpu.sub,
-			"mov": cpu.mov,
-			"jmp": cpu.jmp
+			"add": cpu.add,			//Addition
+			"sub": cpu.sub,			//Subtraction
+			"mov": cpu.mov,			//Move value
+			"jmp": cpu.jmp,			//Jump to
+			"cmp": cpu.cmp,			//Compare values
+			"cgt": cpu.cgt,			//Check if greater than
+			"clt": cpu.clt,			//Compare if less than
+			"jnz": cpu.jnz,			//Jump if not zero
+			"jze": cpu.jze			//Jump if zero
 		};
 
 	};
@@ -193,6 +198,49 @@ function jscpu() {
 	};
 
 	/**
+	 * Compares two values to check if they are equal
+	 * @param {arg} string - The argument string, i.e r0,r1
+	 * @return {void}
+	 */
+	cpu.cmp = function(arg) {
+		
+		var fv = cpu.parseArgs( arg, 0 ); //First value for comparison
+		var sv = cpu.parseArgs( arg, 1 ); //Second value for comparison
+
+		cpu.log('Comparing ' + fv + ' with ' + sv);
+
+		var r = ( fv === sv ? 1 : 0 );
+		cpu.setRegisterValue("s", r); //Set the result in the status register
+	
+	};
+
+	/**
+	 * Jumps to a specified address if status register is not zero
+	 * @param {arg} string - The argument string, i.e #1 or r0
+	 */
+	cpu.jnz = function(arg) {
+
+		var r = cpu.getRegisterValue('s');
+		if ( r === 0 ) return;
+
+		cpu.jmp(arg);
+	
+	};
+
+/**
+	 * Jumps to a specified address if status register equals zero
+	 * @param {arg} string - The argument string, i.e #1 or r0
+	 */
+	cpu.jze = function(arg) {
+
+		var r = cpu.getRegisterValue('s');
+		if ( r !== 0 ) return;
+
+		cpu.jmp(arg);
+	
+	};
+
+	/**
 	 * Debug logging function
 	 * @param {line} string - The string to log
 	 */
@@ -268,10 +316,21 @@ function jscpu() {
 
 }
 
-var source = "mov r0,#12\n";
-source += "add #100,r0\n";
-source += "add r0,r0\n";
-source += "jmp #1\n";
+var source = "mov r0,#0\n"; //Set register 0 to #0
+source += "mov r1,#0\n"; //Set register 1 to #0
+
+//Address #1, incremental counter for r0
+source += "add #1,r0\n"; //Add #1 to register 0
+source += "cmp #10,r0\n"; //Compare #10 with register 0
+source += "jze #2\n"; //Jump to address 1 if register s equals zero (i.e, failed comparison)
+
+//Incremental counter for r1
+source += "add #1,r1\n"; //Add #1 to r1
+source += "mov r0,#0\n"; //Set register 0 to 0
+source += "cmp #5,r1\n"; //Compare #5 with register 1
+source += "jze #2\n"; //Jump to address 2 if register 1 equals zero
+
+
 
 var program = new jscpu();
 program.init(source);
