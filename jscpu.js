@@ -28,9 +28,10 @@ function jscpu() {
 		}
 
 		cpu.instructionSet = {
-			"ADD": cpu.add,
-			"SUB": cpu.sub,
-			"MOV": cpu.mov
+			"add": cpu.add,
+			"sub": cpu.sub,
+			"mov": cpu.mov,
+			"jmp": cpu.jmp
 		};
 
 	};
@@ -110,7 +111,6 @@ function jscpu() {
 		//Execute on the virtual cpu
 		cpu.log(line);
 		cpu.instructionSet[inst](args);
-		cpu.log(line);
 		
 		cpu.registers.pc++;
 
@@ -180,7 +180,16 @@ function jscpu() {
 
 		cpu.setRegisterValue(dr, res);
 
+	};
 
+	cpu.jmp = function(arg) {
+
+		var jd = cpu.parseArgs( arg, 0, true, 1 ); //Get the value of where we want to jump.
+		if ( jd < 0 || jd > cpu.pEnd ) throw( 'Syntax error: jmp called to address that is out of bounds: ' + jd );
+
+		//Set our pc register to jd less 1, as the main loop will reincrement it after this call
+		cpu.registers.pc = jd -1;
+	
 	};
 
 	/**
@@ -198,10 +207,12 @@ function jscpu() {
 	 * @param {exec} bool - Whether to return the raw argument, or the value implied by the arguments (I.e, r1 or the value of r1)
 	 * @return {mixed} 
 	 */
-	cpu.parseArgs = function( args, ind, exec ) {
+	cpu.parseArgs = function( args, ind, exec, len ) {
+
+		if ( typeof len === 'undefined' ) len = 2;
 	
 		var ara = args.split(",");
-		if ( ara.length < 2 ) throw ('Syntax error, invalid arg count on line ' + cpu.registers.pc);
+		if ( ara.length < len ) throw ('Syntax error, invalid arg count on line ' + cpu.registers.pc);
 
 		var rv = ara[ind];
 		var val = false;
@@ -257,10 +268,10 @@ function jscpu() {
 
 }
 
-var source = "MOV r0,#255\n";
-source += "MOV r1,#10\n";
-source += "ADD r0,r1\n";
-source += "SUB #50,r1\n";
+var source = "mov r0,#12\n";
+source += "add #100,r0\n";
+source += "add r0,r0\n";
+source += "jmp #1\n";
 
 var program = new jscpu();
 program.init(source);
